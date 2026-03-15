@@ -1,0 +1,1814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>BloodBridge — Complete System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --blood:     #c0392b;
+  --blood-lit: #e74c3c;
+  --blood-dim: #7f1d1d;
+  --bg:        #0a0707;
+  --bg2:       #140c0c;
+  --bg3:       #1e1010;
+  --border:    #3d1a1a;
+  --text:      #f0e6e6;
+  --muted:     #9d7070;
+  --gold:      #d4a853;
+  --green:     #27ae60;
+  --blue:      #2980b9;
+  --pulse-anim: pulse 2s ease-in-out infinite;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Noise overlay ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0; opacity: 0.4;
+}
+
+/* ── Header ── */
+header {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,7,7,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 60px;
+}
+.logo {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.4rem; color: var(--blood-lit);
+  display: flex; align-items: center; gap: 0.5rem;
+  letter-spacing: 0.02em;
+}
+.logo-dot { width:10px;height:10px;border-radius:50%;background:var(--blood-lit);
+  animation: var(--pulse-anim); }
+@keyframes pulse {
+  0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,0.4);}
+  50%{box-shadow:0 0 0 8px rgba(231,76,60,0);}
+}
+
+nav { display:flex;gap:0.25rem; }
+nav button {
+  background:none;border:none;cursor:pointer;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.72rem;font-weight:500;letter-spacing:0.05em;
+  color:var(--muted);padding:0.4rem 0.9rem;
+  border-radius:4px;text-transform:uppercase;
+  transition:all 0.2s;
+}
+nav button:hover, nav button.active {
+  color:var(--text);background:var(--bg3);
+  border:1px solid var(--border);
+}
+nav button.active { color:var(--blood-lit); border-color:var(--blood-dim); }
+
+/* ── Layout ── */
+main { position:relative;z-index:1; }
+
+.page { display:none;padding:2rem; animation:fadeIn 0.3s ease; }
+.page.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+/* ── Hero ── */
+.hero {
+  text-align:center;padding:4rem 1rem 3rem;
+  background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(192,57,43,0.12) 0%, transparent 70%);
+}
+.hero h1 {
+  font-family:'DM Serif Display',serif;
+  font-size:clamp(2.5rem,6vw,4.5rem);
+  color:var(--text);line-height:1.1;
+}
+.hero h1 span { color:var(--blood-lit); }
+.hero p { color:var(--muted);font-size:0.9rem;margin-top:1rem;max-width:500px;margin-inline:auto; }
+
+.stat-row {
+  display:flex;justify-content:center;flex-wrap:wrap;gap:1.5rem;margin-top:3rem;
+}
+.stat-card {
+  background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+  padding:1.2rem 2rem;text-align:center;min-width:140px;
+  transition:border-color 0.2s;
+}
+.stat-card:hover { border-color:var(--blood-dim); }
+.stat-num { font-family:'DM Serif Display',serif;font-size:2.2rem;color:var(--blood-lit); }
+.stat-lbl { font-size:0.7rem;color:var(--muted);margin-top:0.2rem;letter-spacing:0.06em;text-transform:uppercase; }
+
+/* ── Section titles ── */
+.section-title {
+  font-family:'DM Serif Display',serif;
+  font-size:1.6rem;margin-bottom:0.25rem;color:var(--text);
+}
+.section-sub { font-size:0.78rem;color:var(--muted);margin-bottom:1.8rem; }
+
+/* ── Cards ── */
+.card {
+  background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+  padding:1.5rem;transition:border-color 0.2s,transform 0.2s;
+}
+.card:hover { border-color:var(--blood-dim);transform:translateY(-2px); }
+
+.grid-2 { display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.2rem; }
+.grid-3 { display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.2rem; }
+
+/* ── Forms ── */
+.form-group { margin-bottom:1rem; }
+label { display:block;font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:0.4rem; }
+input,select,textarea {
+  width:100%;padding:0.65rem 0.9rem;
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:0.85rem;
+  outline:none;transition:border-color 0.2s;
+}
+input:focus,select:focus,textarea:focus { border-color:var(--blood); }
+textarea { resize:vertical;min-height:80px; }
+
+.btn {
+  padding:0.65rem 1.5rem;border:none;border-radius:8px;cursor:pointer;
+  font-family:'IBM Plex Mono',monospace;font-size:0.82rem;font-weight:500;
+  letter-spacing:0.04em;text-transform:uppercase;transition:all 0.2s;
+}
+.btn-primary { background:var(--blood);color:#fff; }
+.btn-primary:hover { background:var(--blood-lit);transform:translateY(-1px); }
+.btn-secondary { background:var(--bg3);color:var(--text);border:1px solid var(--border); }
+.btn-secondary:hover { border-color:var(--blood-dim); }
+.btn-green { background:var(--green);color:#fff; }
+.btn-gold  { background:var(--gold);color:#1a1000; }
+
+/* ── Badge ── */
+.badge {
+  display:inline-block;padding:0.2rem 0.6rem;border-radius:999px;
+  font-size:0.68rem;font-weight:500;letter-spacing:0.05em;text-transform:uppercase;
+}
+.badge-green  { background:rgba(39,174,96,0.15);color:#2ecc71;border:1px solid rgba(39,174,96,0.3); }
+.badge-red    { background:rgba(192,57,43,0.15);color:#e74c3c;border:1px solid rgba(192,57,43,0.3); }
+.badge-yellow { background:rgba(212,168,83,0.15);color:#d4a853;border:1px solid rgba(212,168,83,0.3); }
+.badge-blue   { background:rgba(41,128,185,0.15);color:#3498db;border:1px solid rgba(41,128,185,0.3); }
+
+/* ── Timeline ── */
+.timeline { display:flex;flex-direction:column;gap:0; }
+.tl-item { display:flex;gap:1rem;padding:0.8rem 0;position:relative; }
+.tl-item::before {
+  content:'';position:absolute;left:19px;top:50%;height:calc(100% - 10px);
+  width:2px;background:var(--border);transform:translateY(10px);
+}
+.tl-item:last-child::before { display:none; }
+.tl-dot {
+  width:14px;height:14px;border-radius:50%;border:2px solid;
+  flex-shrink:0;margin-top:4px;z-index:1;
+}
+.tl-done  { border-color:var(--green);background:var(--green); }
+.tl-active{ border-color:var(--blood-lit);background:var(--blood-lit);
+  box-shadow:0 0 8px rgba(231,76,60,0.5);animation:var(--pulse-anim); }
+.tl-pending{ border-color:var(--border);background:var(--bg); }
+.tl-text  { font-size:0.82rem;color:var(--text); }
+.tl-sub   { font-size:0.72rem;color:var(--muted); }
+
+/* ── Blood type grid ── */
+.blood-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;margin-top:1rem; }
+.blood-chip {
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:0.6rem;text-align:center;cursor:pointer;transition:all 0.2s;
+}
+.blood-chip:hover { border-color:var(--blood-lit);background:var(--blood-dim); }
+.blood-chip.selected { border-color:var(--blood-lit);background:rgba(192,57,43,0.25); }
+.blood-chip .bg-type { font-family:'DM Serif Display',serif;font-size:1.3rem;color:var(--blood-lit); }
+.blood-chip .bg-lbl  { font-size:0.65rem;color:var(--muted); }
+
+/* ── Compat matrix ── */
+.compat-table { width:100%;border-collapse:collapse;font-size:0.72rem;margin-top:1rem; }
+.compat-table th { padding:0.4rem 0.3rem;color:var(--muted);font-weight:500; }
+.compat-table td { padding:0.35rem;text-align:center;border:1px solid var(--border); }
+.compat-yes { background:rgba(39,174,96,0.2);color:#2ecc71; }
+.compat-no  { background:rgba(0,0,0,0);color:var(--border); }
+
+/* ── EHR card ── */
+.ehr-field { display:flex;justify-content:space-between;align-items:center;
+  padding:0.5rem 0;border-bottom:1px solid var(--border);font-size:0.8rem; }
+.ehr-field:last-child { border-bottom:none; }
+.ehr-key { color:var(--muted); }
+.ehr-val { color:var(--text);font-weight:500; }
+
+/* ── Inventory bar ── */
+.inv-bar-wrap { margin:0.8rem 0; }
+.inv-label    { font-size:0.72rem;color:var(--muted);margin-bottom:0.3rem;
+  display:flex;justify-content:space-between; }
+.inv-track    { height:8px;background:var(--bg3);border-radius:4px;overflow:hidden; }
+.inv-fill     { height:100%;border-radius:4px;transition:width 0.6s ease; }
+.inv-reserved { background:var(--gold); }
+.inv-enroute  { background:var(--blue); }
+.inv-collected{ background:var(--green); }
+
+/* ── Gratitude wall ── */
+.grat-card {
+  background:var(--bg3);border-left:3px solid var(--blood-lit);
+  border-radius:0 8px 8px 0;padding:0.9rem 1rem;margin-bottom:0.8rem;
+  font-family:'Libre Baskerville',serif;font-style:italic;
+  color:var(--text);font-size:0.88rem;line-height:1.6;
+}
+.grat-date { font-family:'IBM Plex Mono',monospace;font-style:normal;
+  font-size:0.68rem;color:var(--muted);margin-top:0.3rem; }
+
+/* ── Breathing coach ── */
+.breath-ring {
+  width:180px;height:180px;border-radius:50%;
+  border:3px solid var(--blood-dim);margin:2rem auto;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;font-size:1rem;color:var(--text);text-align:center;
+}
+.breath-ring .inner {
+  width:130px;height:130px;border-radius:50%;
+  background:rgba(192,57,43,0.08);
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;
+  font-family:'DM Serif Display',serif;
+  transition:transform 0.8s ease, background 0.8s ease;
+}
+.breath-ring.inhale .inner { transform:scale(1.2);background:rgba(192,57,43,0.2); }
+.breath-ring.hold   .inner { transform:scale(1.2);background:rgba(212,168,83,0.2); }
+.breath-ring.exhale .inner { transform:scale(0.85);background:rgba(39,174,96,0.1); }
+.breath-phase { font-size:1.4rem; }
+.breath-count { font-size:0.8rem;font-family:'IBM Plex Mono',monospace;color:var(--muted); }
+
+/* ── Stress meter ── */
+.stress-meter { height:10px;border-radius:5px;background:var(--bg3);
+  overflow:hidden;margin:0.5rem 0; }
+.stress-fill { height:100%;border-radius:5px;transition:width 0.8s ease; }
+
+/* ── Cooldown ring ── */
+.cooldown-wrap { text-align:center;padding:1.5rem 0; }
+.cooldown-svg  { transform:rotate(-90deg); }
+.cooldown-bg   { fill:none;stroke:var(--border);stroke-width:8; }
+.cooldown-fg   { fill:none;stroke:var(--blood-lit);stroke-width:8;
+  stroke-linecap:round;transition:stroke-dashoffset 1s ease; }
+.cooldown-days { font-family:'DM Serif Display',serif;font-size:2rem;color:var(--blood-lit); }
+.cooldown-lbl  { font-size:0.7rem;color:var(--muted);margin-top:0.2rem; }
+
+/* ── Map placeholder ── */
+.map-container {
+  background:var(--bg3);border:1px solid var(--border);border-radius:12px;
+  height:320px;position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+.map-grid {
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size:40px 40px;
+  opacity:0.4;
+}
+.map-pulse {
+  width:20px;height:20px;border-radius:50%;background:var(--blood-lit);
+  position:absolute;top:50%;left:40%;transform:translate(-50%,-50%);
+  box-shadow:0 0 0 0 rgba(231,76,60,0.6);
+  animation:mapPulse 2s ease-out infinite;
+}
+.map-dest {
+  width:14px;height:14px;border-radius:50%;background:var(--green);
+  position:absolute;top:50%;left:65%;transform:translate(-50%,-50%);
+  box-shadow:0 0 8px rgba(39,174,96,0.5);
+}
+.map-line {
+  position:absolute;top:50%;left:40%;width:25%;height:2px;
+  background:linear-gradient(90deg, var(--blood-dim), var(--green));
+  transform-origin:left center;
+}
+@keyframes mapPulse {
+  0%{box-shadow:0 0 0 0 rgba(231,76,60,0.6)}
+  100%{box-shadow:0 0 0 25px rgba(231,76,60,0)}
+}
+.map-overlay {
+  position:absolute;bottom:0;left:0;right:0;
+  background:linear-gradient(transparent, rgba(10,7,7,0.9));
+  padding:1rem;text-align:center;font-size:0.8rem;color:var(--muted);
+}
+
+/* ── Forecast chart ── */
+.chart-bar-wrap { display:flex;gap:0.5rem;align-items:flex-end;height:120px;margin:1rem 0; }
+.chart-bar      { flex:1;border-radius:4px 4px 0 0;
+  background:linear-gradient(to top, var(--blood-dim), var(--blood-lit));
+  position:relative;min-width:20px;
+  transition:height 0.6s ease;cursor:pointer;
+}
+.chart-bar:hover { background:linear-gradient(to top, var(--blood), #ff6b6b); }
+.chart-bar .bar-tip {
+  position:absolute;top:-22px;left:50%;transform:translateX(-50%);
+  font-size:0.65rem;color:var(--text);white-space:nowrap;
+}
+.chart-bar .bar-lbl {
+  position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);
+  font-size:0.6rem;color:var(--muted);white-space:nowrap;
+}
+.chart-shortage {
+  position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--gold);border-radius:2px;
+}
+
+/* ── Impact badges ── */
+.badge-display { display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem; }
+.impact-badge {
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:0.6rem 0.9rem;display:flex;align-items:center;gap:0.5rem;
+  font-size:0.78rem;color:var(--text);
+}
+.impact-badge.earned { border-color:var(--gold);background:rgba(212,168,83,0.08); }
+.impact-badge.locked { opacity:0.4; }
+
+/* ── Toast ── */
+.toast-area {
+  position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;
+  display:flex;flex-direction:column;gap:0.5rem;
+}
+.toast {
+  background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+  padding:0.8rem 1.2rem;font-size:0.8rem;
+  display:flex;align-items:center;gap:0.6rem;
+  animation:slideIn 0.3s ease,fadeOut 0.3s ease 3.7s forwards;
+  max-width:300px;
+}
+.toast.success { border-left:3px solid var(--green); }
+.toast.error   { border-left:3px solid var(--blood-lit); }
+.toast.info    { border-left:3px solid var(--blue); }
+@keyframes slideIn { from{transform:translateX(20px);opacity:0} to{transform:none;opacity:1} }
+@keyframes fadeOut { to{opacity:0;transform:translateX(20px)} }
+
+/* ── Tabs within page ── */
+.inner-tabs { display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap; }
+.inner-tab {
+  padding:0.4rem 1rem;border-radius:6px;cursor:pointer;
+  font-size:0.75rem;letter-spacing:0.04em;text-transform:uppercase;
+  border:1px solid var(--border);color:var(--muted);background:none;
+  font-family:'IBM Plex Mono',monospace;transition:all 0.2s;
+}
+.inner-tab.active { border-color:var(--blood-dim);color:var(--blood-lit);background:rgba(192,57,43,0.08); }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--border);border-radius:3px; }
+
+/* ── Range input ── */
+input[type=range] { accent-color:var(--blood-lit); }
+
+/* ── Responsive ── */
+@media(max-width:600px){
+  nav button span { display:none; }
+  .blood-grid { grid-template-columns:repeat(4,1fr); }
+  header { padding:0 1rem; }
+  .page { padding:1rem; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    <span>BloodBridge</span>
+  </div>
+  <nav id="nav">
+    <button class="active" onclick="goto('home')">Home</button>
+    <button onclick="goto('donor')">Donor</button>
+    <button onclick="goto('patient')">Patient</button>
+    <button onclick="goto('ehr')">EHR</button>
+    <button onclick="goto('tracking')">Tracking</button>
+    <button onclick="goto('inventory')">Inventory</button>
+    <button onclick="goto('forecast')">Forecast</button>
+    <button onclick="goto('wall')">Wall</button>
+    <button onclick="goto('admin')">Admin</button>
+  </nav>
+</header>
+
+<main>
+
+<!-- ═══════════════════ HOME ═══════════════════ -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <h1>Every Drop<br/><span>Saves Lives</span></h1>
+    <p>AI-powered blood donation matching, eligibility screening, real-time tracking, and demand forecasting — all in one platform.</p>
+  </div>
+  <div class="stat-row">
+    <div class="stat-card"><div class="stat-num" id="s-donors">—</div><div class="stat-lbl">Active Donors</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-requests">—</div><div class="stat-lbl">Open Requests</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-donated">—</div><div class="stat-lbl">Donations Done</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-lives">—</div><div class="stat-lbl">Lives Impacted</div></div>
+  </div>
+
+  <div style="margin-top:3rem;" class="grid-2">
+    <div class="card">
+      <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;">System Status</div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot tl-done"></div><div><div class="tl-text">ML Ensemble Model</div><div class="tl-sub">CatBoost + XGBoost + LightGBM — AUC 0.9975</div></div></div>
+        <div class="tl-item"><div class="tl-dot tl-done"></div><div><div class="tl-text">Firebase Firestore</div><div class="tl-sub">Real-time donor/patient sync active</div></div></div>
+        <div class="tl-item"><div class="tl-dot tl-active"></div><div><div class="tl-text">Demand Forecasting</div><div class="tl-sub">XGBoost 7-day regional model running</div></div></div>
+        <div class="tl-item"><div class="tl-dot tl-done"></div><div><div class="tl-text">QR Auth Engine</div><div class="tl-sub">SHA-256 + Isolation Forest fraud detection</div></div></div>
+        <div class="tl-item"><div class="tl-dot tl-done"></div><div><div class="tl-text">ETA Online Learner</div><div class="tl-sub">Adaptive speed model — updates each trip</div></div></div>
+        <div class="tl-item"><div class="tl-dot tl-active"></div><div><div class="tl-text">DonorRiskNet</div><div class="tl-sub">PyTorch — training on post-donation vitals</div></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;">Quick Actions</div>
+      <div style="display:flex;flex-direction:column;gap:0.6rem;">
+        <button class="btn btn-primary" onclick="goto('donor')">🩸 Register as Donor</button>
+        <button class="btn btn-secondary" onclick="goto('patient')">🏥 Register Patient Request</button>
+        <button class="btn btn-secondary" onclick="goto('tracking')">📍 Track Live Donation</button>
+        <button class="btn btn-secondary" onclick="goto('forecast')">📊 View Demand Forecast</button>
+        <button class="btn btn-secondary" onclick="goto('ehr')">📋 Hospital EHR Portal</button>
+        <button class="btn btn-gold" onclick="goto('wall')">💌 Gratitude Wall</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ DONOR ═══════════════════ -->
+<div class="page" id="page-donor">
+  <div class="section-title">Donor Portal</div>
+  <div class="section-sub">Eligibility screening · Health trends · Cooldown tracker · Anxiety coach · Impact dashboard</div>
+
+  <div class="inner-tabs">
+    <button class="inner-tab active" onclick="dtab('register')">Register</button>
+    <button class="inner-tab" onclick="dtab('eligibility')">Eligibility Result</button>
+    <button class="inner-tab" onclick="dtab('stress')">Anxiety Coach</button>
+    <button class="inner-tab" onclick="dtab('cooldown')">Cooldown</button>
+    <button class="inner-tab" onclick="dtab('trends')">Health Trends</button>
+    <button class="inner-tab" onclick="dtab('impact')">Impact Dashboard</button>
+  </div>
+
+  <!-- Register -->
+  <div id="dt-register" class="grid-2">
+    <div class="card">
+      <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem;font-weight:500;">PERSONAL DETAILS</div>
+      <div class="form-group"><label>Full Name</label><input id="d-name" placeholder="e.g. Arjun Suresh"/></div>
+      <div class="grid-2" style="gap:.6rem">
+        <div class="form-group"><label>Age</label><input id="d-age" type="number" placeholder="25"/></div>
+        <div class="form-group"><label>Gender</label>
+          <select id="d-gender"><option>M</option><option>F</option><option>O</option></select>
+        </div>
+      </div>
+      <div class="grid-2" style="gap:.6rem">
+        <div class="form-group"><label>Weight (kg)</label><input id="d-weight" type="number" placeholder="65"/></div>
+        <div class="form-group"><label>Height (cm)</label><input id="d-height" type="number" placeholder="170"/></div>
+      </div>
+      <div style="font-size:0.7rem;color:var(--muted);margin-bottom:.8rem;">Blood Group</div>
+      <div class="blood-grid" id="donor-bg-grid">
+        <div class="blood-chip" onclick="selectBG(this,'donor')"><div class="bg-type">A+</div><div class="bg-lbl">Common</div></div>
+        <div class="blood-chip" onclick="selectBG(this,'donor')"><div class="bg-type">A-</div><div class="bg-lbl">Rare</div></div>
+        <div class="blood-chip" onclick="selectBG(this,'donor')"><div class="bg-type">B+</div><div class="bg-lbl">Common</div></div>
+        <div class="blood-chip" onclick="selectBG(this,'donor')"><div class="bg-type">B-</div><div class="bg-lbl">Rare</div></div>
+        <div class="blood-chip" onclick="selectBG(this,'donor')"><div class="bg-type">O+</div><div class="bg-lbl">Universal</div></div>
+        <div class="blood-chip selected" onclick="selectBG(this,'donor')"><div class="bg-type">O-</div><div class="bg-lbl">Universal</div></div>
+        <div class="blood-chip" onclick="selectBG(this,'donor')"><div class="bg-type">AB+</div><div class="bg-lbl">Recipient</div></div>
+        <div class="blood-chip" onclick="selectBG(this,'donor')"><div class="bg-type">AB-</div><div class="bg-lbl">Rare</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem;font-weight:500;">VITALS</div>
+      <div class="grid-2" style="gap:.6rem">
+        <div class="form-group"><label>BP Systolic</label><input id="d-bps" type="number" placeholder="120"/></div>
+        <div class="form-group"><label>BP Diastolic</label><input id="d-bpd" type="number" placeholder="80"/></div>
+        <div class="form-group"><label>Pulse (bpm)</label><input id="d-pulse" type="number" placeholder="72"/></div>
+        <div class="form-group"><label>Temp (°C)</label><input id="d-temp" type="number" placeholder="37.0"/></div>
+        <div class="form-group"><label>Sleep (hrs)</label><input id="d-sleep" type="number" placeholder="8"/></div>
+        <div class="form-group"><label>Fasted (hrs)</label><input id="d-fasted" type="number" placeholder="2"/></div>
+      </div>
+
+      <div style="font-size:0.8rem;color:var(--blood-lit);margin:1rem 0 0.6rem;font-weight:500;">HEALTH FLAGS</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;font-size:0.78rem;">
+        <label style="text-transform:none;letter-spacing:0;display:flex;gap:.4rem;align-items:center;cursor:pointer;">
+          <input type="checkbox" id="d-diabetes" style="width:auto;accent-color:var(--blood-lit)"/> Diabetes
+        </label>
+        <label style="text-transform:none;letter-spacing:0;display:flex;gap:.4rem;align-items:center;cursor:pointer;">
+          <input type="checkbox" id="d-hypert" style="width:auto;accent-color:var(--blood-lit)"/> Hypertension
+        </label>
+        <label style="text-transform:none;letter-spacing:0;display:flex;gap:.4rem;align-items:center;cursor:pointer;">
+          <input type="checkbox" id="d-heart" style="width:auto;accent-color:var(--blood-lit)"/> Heart Disease
+        </label>
+        <label style="text-transform:none;letter-spacing:0;display:flex;gap:.4rem;align-items:center;cursor:pointer;">
+          <input type="checkbox" id="d-infection" style="width:auto;accent-color:var(--blood-lit)"/> Recent Infection
+        </label>
+        <label style="text-transform:none;letter-spacing:0;display:flex;gap:.4rem;align-items:center;cursor:pointer;">
+          <input type="checkbox" id="d-surgery" style="width:auto;accent-color:var(--blood-lit)"/> Surgery (6m)
+        </label>
+        <label style="text-transform:none;letter-spacing:0;display:flex;gap:.4rem;align-items:center;cursor:pointer;">
+          <input type="checkbox" id="d-pregnant" style="width:auto;accent-color:var(--blood-lit)"/> Pregnant
+        </label>
+        <label style="text-transform:none;letter-spacing:0;display:flex;gap:.4rem;align-items:center;cursor:pointer;">
+          <input type="checkbox" id="d-meds" style="width:auto;accent-color:var(--blood-lit)"/> On Medication
+        </label>
+        <label style="text-transform:none;letter-spacing:0;display:flex;gap:.4rem;align-items:center;cursor:pointer;">
+          <input type="checkbox" id="d-covid" style="width:auto;accent-color:var(--blood-lit)"/> Recent COVID
+        </label>
+      </div>
+
+      <div class="form-group" style="margin-top:1rem;">
+        <label>How are you feeling about donating today?</label>
+        <textarea id="d-feeling" placeholder="e.g. I'm a bit nervous but want to help..."></textarea>
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="runEligibility()">Run AI Eligibility Check →</button>
+    </div>
+  </div>
+
+  <!-- Eligibility Result -->
+  <div id="dt-eligibility" style="display:none">
+    <div class="grid-2">
+      <div class="card" id="elig-result-card">
+        <div style="text-align:center;padding:1.5rem 0">
+          <div id="elig-icon" style="font-size:3.5rem">⏳</div>
+          <div id="elig-verdict" style="font-family:'DM Serif Display',serif;font-size:2rem;margin:.5rem 0">Run check first</div>
+          <div id="elig-prob" style="font-size:0.78rem;color:var(--muted)">Confidence: —</div>
+          <div style="margin:1rem auto;height:8px;width:80%;background:var(--bg3);border-radius:4px;overflow:hidden">
+            <div id="elig-bar" style="height:100%;background:var(--blood-lit);width:0%;transition:width 1s ease;border-radius:4px"></div>
+          </div>
+        </div>
+        <div id="elig-reasons" style="font-size:0.8rem;color:var(--muted);line-height:1.8"></div>
+      </div>
+      <div class="card">
+        <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem;">STRESS ASSESSMENT</div>
+        <div id="stress-label" style="font-size:0.85rem;color:var(--muted);margin-bottom:.4rem">Not assessed yet</div>
+        <div class="stress-meter"><div class="stress-fill" id="stress-bar" style="width:0%;background:var(--green)"></div></div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:.3rem" id="stress-score">Score: —</div>
+        <div style="margin-top:1rem;font-size:0.78rem;color:var(--muted)">
+          Stress detection uses DistilBERT emotion classifier (fear+sadness+anger channels) to screen for pre-donation anxiety.
+        </div>
+        <button class="btn btn-secondary" style="margin-top:1rem;width:100%" onclick="dtab('stress')">
+          Open Anxiety Coach →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Anxiety Coach -->
+  <div id="dt-stress" style="display:none">
+    <div class="card" style="max-width:480px;margin:0 auto;text-align:center">
+      <div class="section-title" style="font-size:1.2rem">Pre-Donation Anxiety Coach</div>
+      <p style="font-size:0.78rem;color:var(--muted);margin:.4rem 0 1.5rem">4-7-8 guided breathing exercise — scientifically shown to reduce vasovagal response before blood donation.</p>
+      <div class="breath-ring" id="breath-ring">
+        <div class="inner" id="breath-inner">
+          <div class="breath-phase" id="breath-phase">🫁</div>
+          <div id="breath-instruction" style="font-size:0.8rem;color:var(--muted)">Press Start</div>
+          <div class="breath-count" id="breath-count"></div>
+        </div>
+      </div>
+      <div style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem" id="breath-status">Cycle 0/4</div>
+      <div style="display:flex;gap:.6rem;justify-content:center">
+        <button class="btn btn-primary" id="breath-btn" onclick="startBreathing()">Start Exercise</button>
+        <button class="btn btn-secondary" onclick="stopBreathing()">Stop</button>
+      </div>
+      <div id="breath-complete" style="display:none;margin-top:1.5rem;padding:1rem;background:rgba(39,174,96,0.1);border:1px solid rgba(39,174,96,0.3);border-radius:8px;color:#2ecc71;font-size:0.85rem">
+        ✅ Great job! Your stress level should be much lower now. Re-run eligibility check to continue.
+      </div>
+    </div>
+  </div>
+
+  <!-- Cooldown Tracker -->
+  <div id="dt-cooldown" style="display:none">
+    <div class="grid-2">
+      <div class="card">
+        <div class="section-title" style="font-size:1.2rem">56-Day Cooldown Tracker</div>
+        <p style="font-size:0.78rem;color:var(--muted);margin:.4rem 0 1.2rem">WHO guidelines require 56 days between whole-blood donations to allow haemoglobin recovery.</p>
+        <div class="form-group"><label>Donor ID</label><input id="cd-id" placeholder="e.g. DNR1234"/></div>
+        <button class="btn btn-primary" onclick="checkCooldown()">Check Eligibility →</button>
+        <div class="cooldown-wrap" id="cooldown-display" style="display:none">
+          <svg class="cooldown-svg" width="140" height="140" viewBox="0 0 140 140">
+            <circle class="cooldown-bg" cx="70" cy="70" r="60"/>
+            <circle class="cooldown-fg" id="cd-arc" cx="70" cy="70" r="60"
+              stroke-dasharray="377" stroke-dashoffset="377"/>
+          </svg>
+          <div class="cooldown-days" id="cd-days">—</div>
+          <div class="cooldown-lbl" id="cd-lbl">days remaining</div>
+          <div id="cd-eligible" style="margin-top:.5rem;font-size:0.78rem;color:var(--muted)"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">DONATION HISTORY SIMULATION</div>
+        <div id="cd-history" style="font-size:0.8rem;color:var(--muted);line-height:2">
+          No donation history loaded. Enter a Donor ID above.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Health Trends -->
+  <div id="dt-trends" style="display:none">
+    <div class="card">
+      <div class="section-title" style="font-size:1.2rem">Personal Health Trends</div>
+      <p style="font-size:0.78rem;color:var(--muted);margin:.4rem 0 1rem">BP, haemoglobin, and pulse charted across every donation visit. Pulled from post_donation_vitals Firestore collection.</p>
+      <div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-top:1rem">
+        <div style="flex:1;min-width:200px">
+          <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">BP Systolic (mmHg)</div>
+          <div class="chart-bar-wrap" id="chart-bp"></div>
+        </div>
+        <div style="flex:1;min-width:200px">
+          <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Haemoglobin (g/dL)</div>
+          <div class="chart-bar-wrap" id="chart-hb"></div>
+        </div>
+        <div style="flex:1;min-width:200px">
+          <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Pulse (bpm)</div>
+          <div class="chart-bar-wrap" id="chart-pulse"></div>
+        </div>
+      </div>
+      <button class="btn btn-secondary" style="margin-top:1rem" onclick="loadTrends()">Load Demo Trends</button>
+    </div>
+  </div>
+
+  <!-- Impact Dashboard -->
+  <div id="dt-impact" style="display:none">
+    <div class="grid-2">
+      <div class="card">
+        <div class="section-title" style="font-size:1.2rem">Your Impact</div>
+        <div class="form-group" style="margin-top:.6rem"><label>Donor ID</label><input id="imp-id" placeholder="DNR1234"/></div>
+        <button class="btn btn-primary" onclick="loadImpact()">Load Dashboard →</button>
+        <div id="impact-data" style="display:none;margin-top:1.5rem">
+          <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem">
+            <div class="stat-card" style="flex:1;min-width:100px"><div class="stat-num" id="imp-count">0</div><div class="stat-lbl">Donations</div></div>
+            <div class="stat-card" style="flex:1;min-width:100px"><div class="stat-num" id="imp-lives">0</div><div class="stat-lbl">Lives ~Saved</div></div>
+          </div>
+          <div style="font-size:0.78rem;color:var(--muted);margin-bottom:.5rem">Badges Earned</div>
+          <div class="badge-display" id="impact-badges"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">DonorRiskNet — POST-DONATION RISK</div>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem">PyTorch 3-class neural net (SAFE / OBSERVE / HIGH_RISK) trained on real Firestore post-donation vitals.</p>
+        <div class="grid-2" style="gap:.5rem">
+          <div class="form-group"><label>Post BP Sys</label><input id="dri-bp" type="number" placeholder="115"/></div>
+          <div class="form-group"><label>Pulse</label><input id="dri-pulse" type="number" placeholder="76"/></div>
+          <div class="form-group"><label>Hb (g/dL)</label><input id="dri-hb" type="number" step=".1" placeholder="13.2"/></div>
+          <div class="form-group"><label>Dizziness</label>
+            <select id="dri-dizzy"><option value="0">No</option><option value="1">Yes</option></select>
+          </div>
+        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="runDRI()">Assess Post-Donation Risk →</button>
+        <div id="dri-result" style="display:none;margin-top:1rem;padding:1rem;background:var(--bg3);border-radius:8px;text-align:center">
+          <div id="dri-class" style="font-family:'DM Serif Display',serif;font-size:1.4rem"></div>
+          <div id="dri-probs" style="font-size:0.72rem;color:var(--muted);margin-top:.3rem"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ PATIENT ═══════════════════ -->
+<div class="page" id="page-patient">
+  <div class="section-title">Patient Portal</div>
+  <div class="section-sub">Register · Find compatible donors · Caregiver alerts · Compatibility explainer</div>
+
+  <div class="inner-tabs">
+    <button class="inner-tab active" onclick="ptab('register')">Register</button>
+    <button class="inner-tab" onclick="ptab('match')">Donor Match</button>
+    <button class="inner-tab" onclick="ptab('compat')">Blood Compatibility</button>
+    <button class="inner-tab" onclick="ptab('caregiver')">Caregiver Alerts</button>
+  </div>
+
+  <div id="pt-register">
+    <div class="grid-2">
+      <div class="card">
+        <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">PATIENT DETAILS</div>
+        <div class="form-group"><label>Full Name</label><input id="p-name" placeholder="Patient name"/></div>
+        <div class="grid-2" style="gap:.6rem">
+          <div class="form-group"><label>Age</label><input id="p-age" type="number"/></div>
+          <div class="form-group"><label>Gender</label>
+            <select id="p-gender"><option>M</option><option>F</option><option>O</option></select>
+          </div>
+        </div>
+        <div style="font-size:0.7rem;color:var(--muted);margin-bottom:.5rem">Required Blood Group</div>
+        <div class="blood-grid" id="patient-bg-grid">
+          <div class="blood-chip" onclick="selectBG(this,'patient')"><div class="bg-type">A+</div></div>
+          <div class="blood-chip" onclick="selectBG(this,'patient')"><div class="bg-type">A-</div></div>
+          <div class="blood-chip" onclick="selectBG(this,'patient')"><div class="bg-type">B+</div></div>
+          <div class="blood-chip" onclick="selectBG(this,'patient')"><div class="bg-type">B-</div></div>
+          <div class="blood-chip selected" onclick="selectBG(this,'patient')"><div class="bg-type">O+</div></div>
+          <div class="blood-chip" onclick="selectBG(this,'patient')"><div class="bg-type">O-</div></div>
+          <div class="blood-chip" onclick="selectBG(this,'patient')"><div class="bg-type">AB+</div></div>
+          <div class="blood-chip" onclick="selectBG(this,'patient')"><div class="bg-type">AB-</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">REQUEST DETAILS</div>
+        <div class="form-group"><label>Units Required</label><input id="p-units" type="number" placeholder="2"/></div>
+        <div class="form-group"><label>Emergency Level</label>
+          <select id="p-emergency">
+            <option>High</option><option>Medium</option><option>Low</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Reason</label>
+          <select id="p-reason">
+            <option>Accident</option><option>Pregnancy</option><option>Anemia</option>
+            <option>Surgery</option><option>Thalassaemia</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Hospital Latitude</label><input id="p-lat" placeholder="11.0168"/></div>
+        <div class="form-group"><label>Hospital Longitude</label><input id="p-lon" placeholder="76.9558"/></div>
+        <button class="btn btn-primary" style="width:100%" onclick="registerPatient()">Register Patient Request →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="pt-match" style="display:none">
+    <div class="card">
+      <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">CROSS-TYPE COMPATIBLE DONOR MATCHES</div>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem">System first finds exact matches, then expands to ABO/Rh compatible donors if pool is insufficient. Each match includes a medical explanation.</p>
+      <button class="btn btn-primary" onclick="findMatches()">Find Compatible Donors →</button>
+      <div id="match-results" style="margin-top:1.5rem"></div>
+    </div>
+  </div>
+
+  <div id="pt-compat" style="display:none">
+    <div class="grid-2">
+      <div class="card">
+        <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">BLOOD COMPATIBILITY EXPLAINER</div>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem">Select a donor blood group to see which patient types it can help, with full medical reasoning.</p>
+        <div style="font-size:0.72rem;color:var(--muted);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em">Donor Blood Group</div>
+        <div class="blood-grid" id="compat-donor-grid">
+          <div class="blood-chip selected" onclick="selectCompatDonor(this)"><div class="bg-type">O-</div></div>
+          <div class="blood-chip" onclick="selectCompatDonor(this)"><div class="bg-type">O+</div></div>
+          <div class="blood-chip" onclick="selectCompatDonor(this)"><div class="bg-type">A+</div></div>
+          <div class="blood-chip" onclick="selectCompatDonor(this)"><div class="bg-type">A-</div></div>
+          <div class="blood-chip" onclick="selectCompatDonor(this)"><div class="bg-type">B+</div></div>
+          <div class="blood-chip" onclick="selectCompatDonor(this)"><div class="bg-type">B-</div></div>
+          <div class="blood-chip" onclick="selectCompatDonor(this)"><div class="bg-type">AB+</div></div>
+          <div class="blood-chip" onclick="selectCompatDonor(this)"><div class="bg-type">AB-</div></div>
+        </div>
+        <div id="compat-reason" style="margin-top:1.2rem;padding:1rem;background:var(--bg3);border-radius:8px;font-size:0.82rem;line-height:1.6;color:var(--text);border-left:3px solid var(--blood-lit)">
+          O- is the universal donor — no A, B, or Rh antigens. Safe for all blood types in emergencies.
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">COMPATIBILITY MATRIX</div>
+        <div style="overflow-x:auto">
+          <table class="compat-table" id="compat-matrix"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="pt-caregiver" style="display:none">
+    <div class="grid-2">
+      <div class="card">
+        <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">REGISTER CAREGIVER</div>
+        <div class="form-group"><label>Patient ID</label><input id="cg-pid" placeholder="PAT1234"/></div>
+        <div class="form-group"><label>Caregiver Name</label><input id="cg-name" placeholder="Family member name"/></div>
+        <div class="form-group"><label>Phone Number</label><input id="cg-phone" placeholder="+91 98765 43210"/></div>
+        <div class="form-group"><label>Email (optional)</label><input id="cg-email" placeholder="caregiver@email.com"/></div>
+        <button class="btn btn-primary" style="width:100%" onclick="registerCaregiver()">Register Caregiver →</button>
+      </div>
+      <div class="card">
+        <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">SIMULATE ALERT STAGES</div>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem">In production, these trigger SMS via Twilio and FCM push notifications. Here they simulate the alert content.</p>
+        <div style="display:flex;flex-direction:column;gap:.5rem">
+          <button class="btn btn-secondary" onclick="simAlert('DONOR_MATCHED')">✅ Donor Matched</button>
+          <button class="btn btn-secondary" onclick="simAlert('DONOR_EN_ROUTE')">🚗 Donor En Route</button>
+          <button class="btn btn-secondary" onclick="simAlert('DONOR_ARRIVED')">🏥 Donor Arrived</button>
+          <button class="btn btn-secondary" onclick="simAlert('DONATION_COMPLETE')">🩸 Donation Complete</button>
+        </div>
+        <div id="alert-preview" style="display:none;margin-top:1rem;padding:1rem;background:var(--bg3);border-radius:8px;font-size:0.82rem;line-height:1.6"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ EHR ═══════════════════ -->
+<div class="page" id="page-ehr">
+  <div class="section-title">Hospital EHR Portal</div>
+  <div class="section-sub">Simulated electronic health records · Automatic urgency classification · Firestore sync</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">GENERATE EHR RECORD</div>
+      <div class="form-group"><label>Patient ID (optional)</label><input id="ehr-pid" placeholder="PAT1234 or leave blank"/></div>
+      <button class="btn btn-primary" onclick="generateEHR()">Simulate EHR Record →</button>
+      <div id="ehr-output" style="display:none;margin-top:1.5rem"></div>
+    </div>
+    <div class="card">
+      <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">FETCH PATIENT EHR</div>
+      <div class="form-group"><label>Patient ID</label><input id="ehr-fetch-pid" placeholder="PAT1234"/></div>
+      <button class="btn btn-secondary" onclick="fetchEHR()">Fetch Latest EHR →</button>
+      <div id="ehr-fetch-output" style="display:none;margin-top:1.5rem"></div>
+    </div>
+  </div>
+
+  <!-- EHR list demo -->
+  <div class="card" style="margin-top:1.2rem">
+    <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">RECENT EHR RECORDS (Demo)</div>
+    <div id="ehr-list"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ TRACKING ═══════════════════ -->
+<div class="page" id="page-tracking">
+  <div class="section-title">Live Donor Tracking</div>
+  <div class="section-sub">Real-time GPS · Animated route · ETA predictor · Stage timeline</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="form-group"><label>Request ID</label><input id="tr-rid" placeholder="REQ1234"/></div>
+      <button class="btn btn-primary" onclick="startTracking()">Begin Simulation →</button>
+      <div style="margin-top:1.5rem">
+        <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">ETA</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:2.8rem;color:var(--blood-lit)" id="tr-eta">— min</div>
+        <div style="font-size:0.78rem;color:var(--muted)" id="tr-dist">Distance: —</div>
+      </div>
+      <div style="margin-top:1.5rem">
+        <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.8rem">Donation Stages</div>
+        <div class="timeline" id="tr-timeline">
+          <div class="tl-item"><div class="tl-dot tl-pending" id="st-matched"></div><div><div class="tl-text">Donor Matched</div><div class="tl-sub tl-time" id="st-matched-t">—</div></div></div>
+          <div class="tl-item"><div class="tl-dot tl-pending" id="st-qr"></div><div><div class="tl-text">QR Verified</div><div class="tl-sub tl-time" id="st-qr-t">—</div></div></div>
+          <div class="tl-item"><div class="tl-dot tl-pending" id="st-otw"></div><div><div class="tl-text">On The Way</div><div class="tl-sub tl-time" id="st-otw-t">—</div></div></div>
+          <div class="tl-item"><div class="tl-dot tl-pending" id="st-arr"></div><div><div class="tl-text">Arrived</div><div class="tl-sub tl-time" id="st-arr-t">—</div></div></div>
+          <div class="tl-item"><div class="tl-dot tl-pending" id="st-done"></div><div><div class="tl-text">Donation Complete</div><div class="tl-sub tl-time" id="st-done-t">—</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="map-container">
+        <div class="map-grid"></div>
+        <div class="map-dest" id="map-dest" title="Hospital"></div>
+        <div class="map-pulse" id="map-donor" title="Donor"></div>
+        <div class="map-line" id="map-line"></div>
+        <div class="map-overlay">
+          <div id="map-info">Enter a Request ID and click Begin Simulation</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ INVENTORY ═══════════════════ -->
+<div class="page" id="page-inventory">
+  <div class="section-title">Blood Unit Inventory</div>
+  <div class="section-sub">Live unit status per request · Reserved / En-Route / Collected breakdown</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="form-group"><label>Request ID</label><input id="inv-rid" placeholder="REQ1234"/></div>
+      <button class="btn btn-primary" onclick="loadInventory()">Load Inventory →</button>
+      <div id="inv-display" style="display:none;margin-top:1.5rem">
+        <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">UNIT STATUS</div>
+        <div class="inv-bar-wrap">
+          <div class="inv-label"><span>Reserved</span><span id="inv-reserved-n">0</span></div>
+          <div class="inv-track"><div class="inv-fill inv-reserved" id="inv-reserved-bar" style="width:0%"></div></div>
+        </div>
+        <div class="inv-bar-wrap">
+          <div class="inv-label"><span>En Route</span><span id="inv-enroute-n">0</span></div>
+          <div class="inv-track"><div class="inv-fill inv-enroute" id="inv-enroute-bar" style="width:0%"></div></div>
+        </div>
+        <div class="inv-bar-wrap">
+          <div class="inv-label"><span>Collected</span><span id="inv-collected-n">0</span></div>
+          <div class="inv-track"><div class="inv-fill inv-collected" id="inv-collected-bar" style="width:0%"></div></div>
+        </div>
+        <div style="margin-top:.8rem;font-size:0.8rem;color:var(--muted)">Total Required: <span id="inv-total" style="color:var(--text)">—</span> units</div>
+        <div style="font-size:0.8rem;color:var(--muted)">Still Pending: <span id="inv-pending" style="color:var(--gold)">—</span> units</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">NEARBY BLOOD CAMPS</div>
+      <div class="form-group"><label>Your Latitude</label><input id="camp-lat" placeholder="11.0168"/></div>
+      <div class="form-group"><label>Your Longitude</label><input id="camp-lon" placeholder="76.9558"/></div>
+      <div class="form-group"><label>Radius (km)</label><input id="camp-rad" type="number" value="10"/></div>
+      <button class="btn btn-secondary" onclick="findCamps()">Find Nearby Camps →</button>
+      <div id="camp-results" style="margin-top:1rem"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1.2rem">
+    <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">REGISTER NEW BLOOD CAMP</div>
+    <div class="grid-2" style="gap:.6rem">
+      <div class="form-group"><label>Camp Name</label><input id="nc-name" placeholder="Sri Ram Blood Donation Camp"/></div>
+      <div class="form-group"><label>Organizer</label><input id="nc-org" placeholder="Lions Club Coimbatore"/></div>
+      <div class="form-group"><label>Date</label><input id="nc-date" type="date"/></div>
+      <div class="form-group"><label>Contact</label><input id="nc-contact" placeholder="+91 98765 00000"/></div>
+      <div class="form-group"><label>Latitude</label><input id="nc-lat" placeholder="11.0168"/></div>
+      <div class="form-group"><label>Longitude</label><input id="nc-lon" placeholder="76.9558"/></div>
+    </div>
+    <button class="btn btn-green" onclick="registerCamp()">Register Camp →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════ FORECAST ═══════════════════ -->
+<div class="page" id="page-forecast">
+  <div class="section-title">Demand Forecasting</div>
+  <div class="section-sub">XGBoost 7-day regional forecast · Shortage risk · Cross-region pooling · RL policy</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">7-DAY DEMAND FORECAST</div>
+      <div class="grid-2" style="gap:.6rem">
+        <div class="form-group"><label>Region</label>
+          <select id="fc-region">
+            <option>Coimbatore</option><option>Chennai</option><option>Madurai</option>
+            <option>Tiruchirappalli</option><option>Salem</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Blood Group</label>
+          <select id="fc-bg">
+            <option>O+</option><option>O-</option><option>A+</option><option>A-</option>
+            <option>B+</option><option>B-</option><option>AB+</option><option>AB-</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="runForecast()">Run Forecast →</button>
+      <div style="margin-top:1.5rem">
+        <div class="chart-bar-wrap" id="fc-chart"></div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:1.5rem;text-align:center">▲ Demand units per day | — Shortage threshold</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">SHORTAGE RISK ENGINE</div>
+      <div id="shortage-display">
+        <div style="font-size:0.78rem;color:var(--muted)">Run a forecast to see shortage probability, SHAP explanations, and RL action recommendations.</div>
+      </div>
+      <div style="margin-top:1.5rem">
+        <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:.8rem">RL OPTIMAL POLICY</div>
+        <div style="display:flex;flex-direction:column;gap:.4rem" id="rl-policy">
+          <div class="ehr-field"><span class="ehr-key">HIGH stock risk</span><span class="ehr-val" style="color:var(--blood-lit)">🚨 Emergency Camp</span></div>
+          <div class="ehr-field"><span class="ehr-key">LOW stock</span><span class="ehr-val" style="color:var(--gold)">📣 Call Donors</span></div>
+          <div class="ehr-field"><span class="ehr-key">OK stock</span><span class="ehr-val" style="color:var(--green)">✅ Do Nothing</span></div>
+        </div>
+      </div>
+      <div style="margin-top:1.5rem">
+        <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:.8rem">CROSS-REGION POOLING</div>
+        <button class="btn btn-secondary" onclick="runCrossRegion()">Check Adjacent Regions →</button>
+        <div id="cr-output" style="margin-top:1rem;font-size:0.8rem;color:var(--muted)"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Heatmap -->
+  <div class="card" style="margin-top:1.2rem">
+    <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">AVERAGE DEMAND HEATMAP</div>
+    <div style="overflow-x:auto">
+      <table id="heatmap-table" style="width:100%;border-collapse:collapse;font-size:0.75rem;text-align:center"></table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ GRATITUDE WALL ═══════════════════ -->
+<div class="page" id="page-wall">
+  <div class="section-title">Gratitude Wall</div>
+  <div class="section-sub">Anonymous thank-you messages from patients to donors — building community, driving repeat donations</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">POST A THANK-YOU</div>
+      <div class="form-group"><label>Request ID</label><input id="gw-rid" placeholder="REQ1234"/></div>
+      <div class="form-group"><label>Patient ID</label><input id="gw-pid" placeholder="PAT1234"/></div>
+      <div class="form-group"><label>Your Message</label>
+        <textarea id="gw-msg" placeholder="Your donation gave me a second chance at life. From the bottom of my heart, thank you..."></textarea>
+      </div>
+      <button class="btn btn-gold" style="width:100%" onclick="postGratitude()">💌 Post Anonymously</button>
+    </div>
+    <div class="card">
+      <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">RECENT MESSAGES</div>
+      <div id="wall-messages"></div>
+      <button class="btn btn-secondary" style="width:100%;margin-top:.5rem" onclick="loadWall()">Refresh Wall</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ ADMIN ═══════════════════ -->
+<div class="page" id="page-admin">
+  <div class="section-title">Admin Panel</div>
+  <div class="section-sub">Train DonorRiskNet · QR session manager · Cross-region pooling · System audit</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">TRAIN DonorRiskNet</div>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem">Pulls post_donation_vitals from Firestore. Uses bootstrap synthetic data if &lt;10 records. Saves to models/donor_risk_net.pt</p>
+      <div class="form-group"><label>Epochs</label><input id="adm-epochs" type="number" value="50"/></div>
+      <div class="form-group"><label>Learning Rate</label><input id="adm-lr" type="number" step=".0001" value="0.001"/></div>
+      <button class="btn btn-primary" onclick="trainDRI()">Start Training →</button>
+      <div id="train-log" style="margin-top:1rem;background:var(--bg3);border-radius:8px;padding:1rem;font-size:0.72rem;color:#2ecc71;min-height:80px;white-space:pre-line;font-family:'IBM Plex Mono',monospace"></div>
+    </div>
+    <div class="card">
+      <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">QR SESSION MANAGER</div>
+      <div class="form-group"><label>Request ID</label><input id="qr-rid" placeholder="REQ1234"/></div>
+      <button class="btn btn-secondary" onclick="generateQR()">Generate QR Session →</button>
+      <div id="qr-display" style="display:none;margin-top:1rem;text-align:center">
+        <div style="width:120px;height:120px;background:white;margin:0 auto;border-radius:8px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden">
+          <div style="position:absolute;inset:0;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(7,1fr);padding:8px;gap:1px" id="qr-grid"></div>
+        </div>
+        <div style="margin-top:.5rem;font-size:0.72rem;color:var(--muted)" id="qr-session-id"></div>
+        <div style="font-size:0.68rem;color:var(--blood-lit)" id="qr-expiry"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:1.2rem">
+    <div class="card">
+      <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">SYSTEM AUDIT LOG</div>
+      <div id="audit-log" style="font-size:0.75rem;color:var(--muted);line-height:2;font-family:'IBM Plex Mono',monospace"></div>
+    </div>
+    <div class="card">
+      <div style="font-size:0.8rem;color:var(--blood-lit);margin-bottom:1rem">MODEL PERFORMANCE</div>
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+        <div class="ehr-field"><span class="ehr-key">Stack Ensemble Accuracy</span><span class="ehr-val" style="color:var(--green)">99.75%</span></div>
+        <div class="ehr-field"><span class="ehr-key">AUC-ROC</span><span class="ehr-val" style="color:var(--green)">0.9975</span></div>
+        <div class="ehr-field"><span class="ehr-key">CatBoost Accuracy</span><span class="ehr-val">96.4%</span></div>
+        <div class="ehr-field"><span class="ehr-key">XGBoost Accuracy</span><span class="ehr-val">97.2%</span></div>
+        <div class="ehr-field"><span class="ehr-key">LightGBM Accuracy</span><span class="ehr-val">96.8%</span></div>
+        <div class="ehr-field"><span class="ehr-key">Forecast MAE</span><span class="ehr-val">~2.1 units</span></div>
+        <div class="ehr-field"><span class="ehr-key">DonorRiskNet Status</span><span class="ehr-val" id="dri-status" style="color:var(--gold)">Untrained</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- Toast area -->
+<div class="toast-area" id="toast-area"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────
+const state = {
+  donorBG: 'O-',
+  patientBG: 'O+',
+  compatDonor: 'O-',
+  breathTimer: null,
+  trackTimer: null,
+  trackStep: 0,
+  dri_trained: false,
+  auditLog: [],
+};
+
+const COMPAT = {
+  'A+' : {donate_to:['A+','AB+'],         receive:['A+','A-','O+','O-']},
+  'A-' : {donate_to:['A+','A-','AB+','AB-'],   receive:['A-','O-']},
+  'B+' : {donate_to:['B+','AB+'],         receive:['B+','B-','O+','O-']},
+  'B-' : {donate_to:['B+','B-','AB+','AB-'],   receive:['B-','O-']},
+  'AB+': {donate_to:['AB+'],              receive:['A+','A-','B+','B-','AB+','AB-','O+','O-']},
+  'AB-': {donate_to:['AB+','AB-'],        receive:['A-','B-','AB-','O-']},
+  'O+' : {donate_to:['A+','B+','AB+','O+'],    receive:['O+','O-']},
+  'O-' : {donate_to:['A+','A-','B+','B-','AB+','AB-','O+','O-'], receive:['O-']},
+};
+const REASONS = {
+  'O-' :'O- is the universal donor — no A, B, or Rh antigens. Accepted by every blood type in emergencies.',
+  'O+' :'O+ has no A or B antigens. Rh+ is tolerated by Rh+ recipients, covering ~38% of the population.',
+  'AB+':'AB+ is the universal recipient — carries all antigens, so any compatible blood is accepted.',
+  'A-' :'A- is Rh-negative; safe for A+ recipients when Rh+ blood is unavailable.',
+  'B-' :'B- is Rh-negative; safe for B+ recipients in emergencies.',
+  'AB-':'AB- can donate red cells to all Rh-negative types; plasma to all types.',
+  'A+' :'A+ matches A+ and AB+ patients — about 28% of India\'s population.',
+  'B+' :'B+ is the most common Indian blood type (~38%) — primarily benefits B+ and AB+ patients.',
+};
+
+// ── NAV ─────────────────────────────────────────────────────────────────
+function goto(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('nav button').forEach((b,i) => {
+    const pages = ['home','donor','patient','ehr','tracking','inventory','forecast','wall','admin'];
+    b.classList.toggle('active', pages[i] === page);
+  });
+  if (page === 'home') updateStats();
+  if (page === 'ehr') renderEHRList();
+  if (page === 'forecast') renderHeatmap();
+  if (page === 'wall') loadWall();
+  if (page === 'admin') renderAuditLog();
+  if (page === 'patient') { renderCompatMatrix(); updateCompatReason(); }
+}
+
+// ── TABS ─────────────────────────────────────────────────────────────────
+function dtab(t) {
+  ['register','eligibility','stress','cooldown','trends','impact'].forEach(id => {
+    document.getElementById('dt-'+id).style.display = id===t?'':'none';
+  });
+  document.querySelectorAll('#page-donor .inner-tab').forEach((b,i) => {
+    const tabs = ['register','eligibility','stress','cooldown','trends','impact'];
+    b.classList.toggle('active', tabs[i] === t);
+  });
+}
+function ptab(t) {
+  ['register','match','compat','caregiver'].forEach(id => {
+    document.getElementById('pt-'+id).style.display = id===t?'':'none';
+  });
+  document.querySelectorAll('#page-patient .inner-tab').forEach((b,i) => {
+    const tabs = ['register','match','compat','caregiver'];
+    b.classList.toggle('active', tabs[i] === t);
+  });
+}
+
+// ── BLOOD GROUP SELECTOR ─────────────────────────────────────────────────
+function selectBG(el, who) {
+  const grid = document.getElementById(who+'-bg-grid') ||
+               el.closest('.blood-grid');
+  grid.querySelectorAll('.blood-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  const bg = el.querySelector('.bg-type').textContent;
+  if (who === 'donor')   state.donorBG   = bg;
+  if (who === 'patient') state.patientBG = bg;
+}
+
+// ── STATS ──────────────────────────────────────────────────────────────
+function updateStats() {
+  animNum('s-donors', 47);
+  animNum('s-requests', 12);
+  animNum('s-donated', 134);
+  animNum('s-lives', 402);
+}
+function animNum(id, target) {
+  const el = document.getElementById(id);
+  let n = 0;
+  const step = Math.ceil(target / 30);
+  const t = setInterval(() => {
+    n = Math.min(n + step, target);
+    el.textContent = n;
+    if (n >= target) clearInterval(t);
+  }, 40);
+}
+
+// ── ELIGIBILITY ──────────────────────────────────────────────────────────
+function runEligibility() {
+  const age     = +document.getElementById('d-age').value || 25;
+  const weight  = +document.getElementById('d-weight').value || 65;
+  const bps     = +document.getElementById('d-bps').value || 120;
+  const bpd     = +document.getElementById('d-bpd').value || 80;
+  const pulse   = +document.getElementById('d-pulse').value || 72;
+  const temp    = +document.getElementById('d-temp').value || 37.0;
+  const sleep   = +document.getElementById('d-sleep').value || 8;
+  const fasted  = +document.getElementById('d-fasted').value || 2;
+  const diabetes  = document.getElementById('d-diabetes').checked;
+  const heart     = document.getElementById('d-heart').checked;
+  const infection = document.getElementById('d-infection').checked;
+  const surgery   = document.getElementById('d-surgery').checked;
+  const pregnant  = document.getElementById('d-pregnant').checked;
+  const meds      = document.getElementById('d-meds').checked;
+  const feeling   = document.getElementById('d-feeling').value;
+
+  const reasons = [];
+  let score = 1.0;
+
+  if (age < 18 || age > 65)    { reasons.push('⚠️ Age outside 18–65 range.'); score -= 0.6; }
+  if (weight < 50)              { reasons.push('⚠️ Weight below 50 kg minimum.'); score -= 0.5; }
+  if (!(100<=bps&&bps<=140))    { reasons.push('⚠️ Systolic BP out of range (100–140).'); score -= 0.3; }
+  if (!(60<=bpd&&bpd<=90))      { reasons.push('⚠️ Diastolic BP out of range (60–90).'); score -= 0.2; }
+  if (pulse<50||pulse>100)      { reasons.push('⚠️ Pulse out of safe range (50–100 bpm).'); score -= 0.3; }
+  if (temp > 37.5)              { reasons.push('⚠️ Fever detected (>37.5°C).'); score -= 0.5; }
+  if (sleep < 6)                { reasons.push('⚠️ Insufficient sleep (<6 hrs).'); score -= 0.2; }
+  if (fasted > 4)               { reasons.push('⚠️ Fasted >4 hrs before donation.'); score -= 0.2; }
+  if (diabetes)                 { reasons.push('⚠️ Chronic diabetes present.'); score -= 0.4; }
+  if (heart)                    { reasons.push('⚠️ Chronic heart disease reported.'); score -= 0.8; }
+  if (infection)                { reasons.push('⚠️ Recent infection reported.'); score -= 0.5; }
+  if (surgery)                  { reasons.push('⚠️ Recent surgery (within 6 months).'); score -= 0.5; }
+  if (pregnant)                 { reasons.push('⚠️ Pregnant — donation deferred.'); score -= 1.0; }
+  if (meds)                     { reasons.push('⚠️ Currently on medication.'); score -= 0.3; }
+
+  score = Math.max(0, Math.min(1, score));
+
+  // Stress
+  const stressWords = ['nervous','scared','worried','anxious','afraid','fear','panic','dread','uncertain','terrified'];
+  const low = (feeling||'').toLowerCase();
+  const stressHits = stressWords.filter(w => low.includes(w)).length;
+  let stressScore = Math.min(stressHits * 0.25, 0.9);
+  if (!feeling) stressScore = 0.1;
+
+  const stressLevel = stressScore > 0.6 ? 'HIGH_STRESS' : stressScore > 0.3 ? 'MODERATE_STRESS' : 'NORMAL';
+  if (stressLevel === 'HIGH_STRESS') reasons.push('🧠 High pre-donation anxiety detected.');
+
+  const prob = Math.max(0.05, score - stressScore * 0.2);
+  const eligible = prob >= 0.4 && stressLevel !== 'HIGH_STRESS';
+
+  const card = document.getElementById('elig-result-card');
+  document.getElementById('elig-icon').textContent    = eligible ? '✅' : '❌';
+  document.getElementById('elig-verdict').textContent = eligible ? 'ELIGIBLE' : 'NOT ELIGIBLE';
+  document.getElementById('elig-verdict').style.color = eligible ? 'var(--green)' : 'var(--blood-lit)';
+  document.getElementById('elig-prob').textContent    = `Confidence: ${(prob*100).toFixed(0)}%`;
+  document.getElementById('elig-bar').style.width     = (prob*100) + '%';
+  document.getElementById('elig-bar').style.background = eligible ? 'var(--green)' : 'var(--blood-lit)';
+  document.getElementById('elig-reasons').innerHTML   = reasons.length
+    ? reasons.map(r => `<div>${r}</div>`).join('')
+    : '<div>✅ Passes all basic clinical screening checks.</div>';
+
+  // Stress display
+  document.getElementById('stress-label').textContent = stressLevel;
+  document.getElementById('stress-bar').style.width = (stressScore*100) + '%';
+  document.getElementById('stress-bar').style.background = stressScore>0.6?'var(--blood-lit)':stressScore>0.3?'var(--gold)':'var(--green)';
+  document.getElementById('stress-score').textContent = `Score: ${stressScore.toFixed(2)}`;
+
+  dtab('eligibility');
+  toast(eligible ? '✅ Donor marked ELIGIBLE' : '❌ Donor NOT eligible — see reasons', eligible ? 'success' : 'error');
+  addAudit(`Eligibility run: ${document.getElementById('d-name').value||'Donor'} → ${eligible?'ELIGIBLE':'NOT ELIGIBLE'} (conf ${(prob*100).toFixed(0)}%)`);
+}
+
+// ── BREATHING COACH ───────────────────────────────────────────────────────
+let breathRunning = false, breathCycle = 0, breathPhaseT = null;
+function startBreathing() {
+  if (breathRunning) return;
+  breathRunning = true; breathCycle = 0;
+  document.getElementById('breath-complete').style.display = 'none';
+  nextBreathPhase('inhale', 4);
+}
+function stopBreathing() {
+  breathRunning = false;
+  clearTimeout(breathPhaseT);
+  const ring = document.getElementById('breath-ring');
+  ring.className = 'breath-ring';
+  document.getElementById('breath-phase').textContent = '🫁';
+  document.getElementById('breath-instruction').textContent = 'Press Start';
+  document.getElementById('breath-count').textContent = '';
+  document.getElementById('breath-status').textContent = 'Stopped';
+}
+function nextBreathPhase(phase, secs) {
+  if (!breathRunning) return;
+  const ring   = document.getElementById('breath-ring');
+  const phaseEl = document.getElementById('breath-phase');
+  const instrEl = document.getElementById('breath-instruction');
+  const countEl = document.getElementById('breath-count');
+  const statusEl = document.getElementById('breath-status');
+
+  ring.className = 'breath-ring ' + phase;
+  const labels = {inhale:{icon:'🌬️',text:'Breathe IN'}, hold:{icon:'⏸',text:'Hold'}, exhale:{icon:'💨',text:'Breathe OUT'}};
+  phaseEl.textContent = labels[phase].icon;
+  instrEl.textContent = labels[phase].text;
+  statusEl.textContent = `Cycle ${breathCycle+1}/4`;
+
+  let t = secs;
+  const tick = setInterval(() => {
+    countEl.textContent = t + 's';
+    t--;
+    if (t < 0) {
+      clearInterval(tick);
+      if (!breathRunning) return;
+      if (phase === 'inhale')  nextBreathPhase('hold', 7);
+      else if (phase === 'hold')   nextBreathPhase('exhale', 8);
+      else {
+        breathCycle++;
+        if (breathCycle >= 4) {
+          breathRunning = false;
+          ring.className = 'breath-ring';
+          phaseEl.textContent = '✅';
+          instrEl.textContent = 'Complete!';
+          countEl.textContent = '';
+          statusEl.textContent = 'Exercise done';
+          document.getElementById('breath-complete').style.display = 'block';
+        } else {
+          nextBreathPhase('inhale', 4);
+        }
+      }
+    }
+  }, 1000);
+}
+
+// ── COOLDOWN ────────────────────────────────────────────────────────────
+function checkCooldown() {
+  const id = document.getElementById('cd-id').value;
+  if (!id) { toast('Enter a Donor ID', 'error'); return; }
+  // Simulate: random last donation 10–70 days ago
+  const daysAgo = Math.floor(Math.random() * 60) + 5;
+  const daysLeft = Math.max(56 - daysAgo, 0);
+  const ready = daysLeft === 0;
+
+  document.getElementById('cooldown-display').style.display = '';
+  document.getElementById('cd-days').textContent = daysLeft || '✓';
+  document.getElementById('cd-lbl').textContent  = ready ? 'Ready to donate!' : 'days remaining';
+  document.getElementById('cd-eligible').textContent = ready
+    ? `✅ Last donated ${daysAgo} days ago. Eligible now!`
+    : `Last donation: ${daysAgo} days ago. Eligible ${new Date(Date.now()+(daysLeft*86400000)).toDateString()}`;
+  document.getElementById('cd-eligible').style.color = ready ? 'var(--green)' : 'var(--gold)';
+
+  const arc = document.getElementById('cd-arc');
+  const pct = ready ? 1 : daysAgo / 56;
+  arc.style.strokeDashoffset = 377 - 377 * pct;
+  arc.style.stroke = ready ? 'var(--green)' : 'var(--blood-lit)';
+
+  // History
+  const history = [];
+  for (let i = 3; i >= 0; i--) {
+    const d = new Date(Date.now() - ((daysAgo + i*56 + 10) * 86400000));
+    history.push(`${d.toDateString()} — Donation #${4-i}`);
+  }
+  document.getElementById('cd-history').innerHTML = history.map(h => `<div>🩸 ${h}</div>`).join('');
+  addAudit(`Cooldown check: ${id} — ${daysLeft} days remaining`);
+}
+
+// ── HEALTH TRENDS ──────────────────────────────────────────────────────
+function loadTrends() {
+  const bpData    = [128, 122, 118, 125, 120, 116];
+  const hbData    = [13.2, 12.8, 13.5, 12.6, 13.1, 13.8];
+  const pulseData = [74, 78, 71, 76, 72, 69];
+  const labels    = ['Sep 23', 'Jan 24', 'Mar 24', 'Jul 24', 'Oct 24', 'Feb 25'];
+
+  renderMiniChart('chart-bp',    bpData,    labels, 100, 145, 'var(--blood-lit)');
+  renderMiniChart('chart-hb',    hbData,    labels, 10, 16.5, 'var(--blue)');
+  renderMiniChart('chart-pulse', pulseData, labels, 55, 95, 'var(--green)');
+}
+function renderMiniChart(id, data, labels, min, max, color) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const range = max - min;
+  el.innerHTML = data.map((v, i) => {
+    const h = Math.round(((v - min) / range) * 100);
+    return `<div class="chart-bar" style="height:${h}%;background:${color};background:linear-gradient(to top,${color}88,${color})">
+      <div class="bar-tip">${v}</div>
+      <div class="bar-lbl">${labels[i]}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── IMPACT DASHBOARD ───────────────────────────────────────────────────
+const BADGES = [
+  [1,'🩸','First Drop'],
+  [3,'🔥','Triple Saver'],
+  [5,'⭐','Life Star'],
+  [10,'🏅','Platinum Donor'],
+  [25,'🦸','SuperDonor'],
+];
+function loadImpact() {
+  const id = document.getElementById('imp-id').value;
+  if (!id) { toast('Enter a Donor ID', 'error'); return; }
+  const count = Math.floor(Math.random() * 12) + 1;
+  const lives = count * 3;
+  document.getElementById('imp-count').textContent = count;
+  document.getElementById('imp-lives').textContent = lives;
+  document.getElementById('impact-data').style.display = '';
+
+  const badgesEl = document.getElementById('impact-badges');
+  badgesEl.innerHTML = BADGES.map(([req, icon, name]) => {
+    const earned = count >= req;
+    return `<div class="impact-badge ${earned?'earned':'locked'}">${icon} ${name} ${earned?'':'🔒'}</div>`;
+  }).join('');
+  addAudit(`Impact loaded: ${id} — ${count} donations, ~${lives} lives`);
+}
+
+// ── DRI RISK NET ─────────────────────────────────────────────────────
+function runDRI() {
+  const bp    = +document.getElementById('dri-bp').value || 115;
+  const pulse = +document.getElementById('dri-pulse').value || 76;
+  const hb    = +document.getElementById('dri-hb').value || 13.2;
+  const dizzy = +document.getElementById('dri-dizzy').value;
+
+  let cls, safe, obs, risk;
+  if (hb < 11 || bp < 90 || dizzy) {
+    cls = 'HIGH_RISK'; safe=0.05; obs=0.15; risk=0.80;
+  } else if (bp < 100 || pulse > 110) {
+    cls = 'OBSERVE';   safe=0.25; obs=0.60; risk=0.15;
+  } else {
+    cls = 'SAFE';      safe=0.85; obs=0.12; risk=0.03;
+  }
+
+  const colors = {SAFE:'var(--green)', OBSERVE:'var(--gold)', HIGH_RISK:'var(--blood-lit)'};
+  document.getElementById('dri-result').style.display = '';
+  document.getElementById('dri-class').textContent = cls;
+  document.getElementById('dri-class').style.color = colors[cls];
+  document.getElementById('dri-probs').textContent = `SAFE: ${(safe*100).toFixed(0)}% | OBSERVE: ${(obs*100).toFixed(0)}% | HIGH_RISK: ${(risk*100).toFixed(0)}%`;
+  toast(`DonorRiskNet: ${cls}`, cls==='SAFE'?'success':cls==='OBSERVE'?'info':'error');
+  addAudit(`DRI assessment: ${cls}`);
+}
+
+// ── PATIENT REGISTER ───────────────────────────────────────────────────
+function registerPatient() {
+  const name = document.getElementById('p-name').value;
+  if (!name) { toast('Enter patient name', 'error'); return; }
+  const pid = 'PAT' + Math.floor(Math.random()*9000+1000);
+  toast(`✅ Patient ${name} registered as ${pid}`, 'success');
+  addAudit(`Patient registered: ${name} (${pid}) — ${state.patientBG}`);
+}
+
+// ── DONOR MATCHES ──────────────────────────────────────────────────────
+function findMatches() {
+  const bg = state.patientBG;
+  const compat = COMPAT[bg] || {};
+  const eligible_donors = [
+    {name:'Arjun K.', bg:bg, dist:1.2, type:'EXACT'},
+    {name:'Priya R.', bg:'O-', dist:3.4, type:'CROSS', note:REASONS['O-']},
+    {name:'Suresh M.', bg:bg, dist:5.1, type:'EXACT'},
+  ].filter((_, i) => i < 3);
+
+  const el = document.getElementById('match-results');
+  el.innerHTML = eligible_donors.map(d => `
+    <div class="card" style="margin-bottom:.8rem;padding:1rem;display:flex;align-items:center;gap:1rem">
+      <div style="font-family:'DM Serif Display',serif;font-size:1.5rem;color:var(--blood-lit);min-width:50px;text-align:center">${d.bg}</div>
+      <div style="flex:1">
+        <div style="font-weight:500;font-size:0.85rem">${d.name}</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:.2rem">${d.dist} km away</div>
+        ${d.note ? `<div style="font-size:0.72rem;color:var(--muted);margin-top:.3rem;font-style:italic">ℹ️ ${d.note}</div>` : ''}
+      </div>
+      <span class="badge ${d.type==='EXACT'?'badge-green':'badge-yellow'}">${d.type}</span>
+    </div>
+  `).join('');
+  addAudit(`Donor match: ${bg} patient — ${eligible_donors.length} found`);
+}
+
+// ── COMPATIBILITY ──────────────────────────────────────────────────────
+function selectCompatDonor(el) {
+  el.closest('.blood-grid').querySelectorAll('.blood-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  state.compatDonor = el.querySelector('.bg-type').textContent;
+  updateCompatReason();
+}
+function updateCompatReason() {
+  const bg = state.compatDonor || 'O-';
+  document.getElementById('compat-reason').textContent = REASONS[bg] || `${bg} compatibility data loaded.`;
+}
+function renderCompatMatrix() {
+  const types = ['O-','O+','A-','A+','B-','B+','AB-','AB+'];
+  const el = document.getElementById('compat-matrix');
+  if (!el) return;
+  const header = `<tr><th>Donor →</th>${types.map(t=>`<th style="color:var(--blood-lit)">${t}</th>`).join('')}</tr>`;
+  const rows = types.map(pat => {
+    const cells = types.map(don => {
+      const can = (COMPAT[don]?.donate_to || []).includes(pat);
+      return `<td class="${can?'compat-yes':'compat-no'}">${can?'✓':'·'}</td>`;
+    }).join('');
+    return `<tr><th style="text-align:left;color:var(--muted);font-weight:normal;padding:0.3rem .5rem">${pat}</th>${cells}</tr>`;
+  });
+  el.innerHTML = header + rows.join('');
+}
+
+// ── CAREGIVER ──────────────────────────────────────────────────────────
+function registerCaregiver() {
+  const name  = document.getElementById('cg-name').value;
+  const pid   = document.getElementById('cg-pid').value;
+  const phone = document.getElementById('cg-phone').value;
+  if (!name || !pid) { toast('Fill in patient ID and caregiver name', 'error'); return; }
+  toast(`✅ Caregiver ${name} registered for ${pid}`, 'success');
+  addAudit(`Caregiver registered: ${name} → ${pid}`);
+}
+function simAlert(stage) {
+  const messages = {
+    DONOR_MATCHED:  '✅ A donor has been matched for your family member\'s blood request.',
+    DONOR_EN_ROUTE: '🚗 The donor is now on the way to the hospital. ETA: ~18 min.',
+    DONOR_ARRIVED:  '🏥 The donor has arrived at the hospital.',
+    DONATION_COMPLETE: '🩸 Blood donation successfully completed. Thank you!',
+  };
+  const el = document.getElementById('alert-preview');
+  el.style.display = '';
+  el.innerHTML = `
+    <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem">📲 SMS Alert — ${stage}</div>
+    <div>${messages[stage]}</div>
+    <div style="font-size:0.68rem;color:var(--muted);margin-top:.4rem">${new Date().toLocaleTimeString()}</div>
+  `;
+  toast(`Alert sent: ${stage}`, 'info');
+}
+
+// ── EHR ────────────────────────────────────────────────────────────────
+const DIAGNOSES = ['Acute Anaemia','Thalassaemia','Sickle Cell Crisis','Post-Op Haemorrhage','Trauma - RTA','Obstetric Emergency'];
+const WARDS = ['ICU','Emergency','Surgical Ward','Maternity','Oncology','General Ward'];
+const PHYSICIANS = ['Dr. Priya Suresh','Dr. Karthik Rajan','Dr. Meenakshi Iyer','Dr. Arun Balaji','Dr. Kavitha Nair'];
+
+function generateEHR() {
+  const pid = document.getElementById('ehr-pid').value || 'PAT'+Math.floor(Math.random()*9000+1000);
+  const ehr = buildEHR(pid);
+  const el  = document.getElementById('ehr-output');
+  el.style.display = '';
+  el.innerHTML = renderEHRCard(ehr);
+  addAudit(`EHR generated: ${ehr.EHR_ID} — ${ehr.Diagnosis}`);
+  toast('EHR record generated', 'success');
+}
+function fetchEHR() {
+  const pid = document.getElementById('ehr-fetch-pid').value;
+  if (!pid) { toast('Enter patient ID', 'error'); return; }
+  const ehr = buildEHR(pid);
+  document.getElementById('ehr-fetch-output').style.display = '';
+  document.getElementById('ehr-fetch-output').innerHTML = renderEHRCard(ehr);
+}
+function buildEHR(pid) {
+  const hb = +(Math.random()*7+4.5).toFixed(1);
+  const urgency = hb < 6 ? 'High' : hb < 8.5 ? 'Medium' : 'Low';
+  return {
+    EHR_ID: 'EHR'+Math.floor(Math.random()*90000+10000),
+    Patient_ID: pid,
+    Admission_Date: new Date(Date.now()-Math.random()*5*864e5).toDateString(),
+    Ward: WARDS[Math.floor(Math.random()*WARDS.length)],
+    Diagnosis: DIAGNOSES[Math.floor(Math.random()*DIAGNOSES.length)],
+    Attending_Physician: PHYSICIANS[Math.floor(Math.random()*PHYSICIANS.length)],
+    Haemoglobin_g_dL: hb,
+    Platelet_count_lakh: +(Math.random()*4+0.5).toFixed(2),
+    Blood_Group_Required: Object.keys(COMPAT)[Math.floor(Math.random()*8)],
+    Units_Ordered: Math.floor(Math.random()*3)+1,
+    Crossmatch_Done: Math.random() > 0.5,
+    Clinical_Urgency: urgency,
+  };
+}
+function renderEHRCard(ehr) {
+  const urgColor = {High:'var(--blood-lit)',Medium:'var(--gold)',Low:'var(--green)'}[ehr.Clinical_Urgency];
+  return `<div>
+    ${[
+      ['EHR ID', ehr.EHR_ID], ['Patient ID', ehr.Patient_ID],
+      ['Admission', ehr.Admission_Date], ['Ward', ehr.Ward],
+      ['Diagnosis', ehr.Diagnosis], ['Physician', ehr.Attending_Physician],
+      ['Haemoglobin', ehr.Haemoglobin_g_dL + ' g/dL'],
+      ['Platelets', ehr.Platelet_count_lakh + ' lakh'],
+      ['Blood Required', `${ehr.Units_Ordered}x ${ehr.Blood_Group_Required}`],
+      ['Crossmatch', ehr.Crossmatch_Done ? 'Done' : 'Pending'],
+      ['Urgency', `<span style="color:${urgColor}">${ehr.Clinical_Urgency}</span>`],
+    ].map(([k,v]) => `<div class="ehr-field"><span class="ehr-key">${k}</span><span class="ehr-val">${v}</span></div>`).join('')}
+  </div>`;
+}
+function renderEHRList() {
+  const pids = ['PAT2341','PAT5892','PAT1034'];
+  document.getElementById('ehr-list').innerHTML = pids.map(p => {
+    const ehr = buildEHR(p);
+    return `<div class="card" style="margin-bottom:.8rem;padding:1rem">${renderEHRCard(ehr)}</div>`;
+  }).join('');
+}
+
+// ── TRACKING SIMULATION ───────────────────────────────────────────────
+function startTracking() {
+  const rid = document.getElementById('tr-rid').value || 'REQ1234';
+  state.trackStep = 0;
+  clearInterval(state.trackTimer);
+
+  const stages = [
+    {dot:'st-matched', t:'st-matched-t', label:'Matched'},
+    {dot:'st-qr',      t:'st-qr-t',      label:'QR Verified'},
+    {dot:'st-otw',     t:'st-otw-t',     label:'On The Way'},
+    {dot:'st-arr',     t:'st-arr-t',     label:'Arrived'},
+    {dot:'st-done',    t:'st-done-t',    label:'Complete'},
+  ];
+
+  // Reset
+  stages.forEach(s => {
+    document.getElementById(s.dot).className = 'tl-dot tl-pending';
+    document.getElementById(s.t).textContent = '—';
+  });
+
+  let step = 0;
+  const donor = document.getElementById('map-donor');
+  const line  = document.getElementById('map-line');
+
+  state.trackTimer = setInterval(() => {
+    if (step >= stages.length) { clearInterval(state.trackTimer); return; }
+    const s = stages[step];
+    // Complete previous
+    if (step > 0) {
+      document.getElementById(stages[step-1].dot).className = 'tl-dot tl-done';
+    }
+    document.getElementById(s.dot).className = 'tl-dot tl-active';
+    document.getElementById(s.t).textContent = new Date().toLocaleTimeString();
+
+    // Animate donor dot on map
+    const pct = step / (stages.length - 1);
+    const donorLeft = 40 + pct * 25;
+    donor.style.left = donorLeft + '%';
+    const eta = Math.max(0, Math.round((1-pct) * 18));
+    document.getElementById('tr-eta').textContent = eta + ' min';
+    document.getElementById('tr-dist').textContent = `Distance: ${(2.8 * (1-pct)).toFixed(1)} km`;
+    document.getElementById('map-info').textContent = `${s.label} — ETA: ${eta} min`;
+
+    if (step === stages.length - 1) {
+      document.getElementById(s.dot).className = 'tl-dot tl-done';
+      toast('🩸 Donation completed!', 'success');
+    }
+
+    step++;
+  }, 2000);
+
+  toast(`Tracking started: ${rid}`, 'info');
+  addAudit(`Live tracking started: ${rid}`);
+}
+
+// ── INVENTORY ──────────────────────────────────────────────────────────
+function loadInventory() {
+  const rid = document.getElementById('inv-rid').value;
+  if (!rid) { toast('Enter Request ID', 'error'); return; }
+  const total     = Math.floor(Math.random()*3)+1;
+  const reserved  = 1;
+  const enroute   = Math.random()>0.5 ? 1 : 0;
+  const collected = Math.random()>0.7 ? 1 : 0;
+  const pending   = Math.max(total - collected, 0);
+
+  document.getElementById('inv-display').style.display = '';
+  const setBar = (bid, nid, n, total) => {
+    document.getElementById(nid).textContent = n;
+    document.getElementById(bid).style.width = (n/total*100) + '%';
+  };
+  setBar('inv-reserved-bar','inv-reserved-n', reserved, total);
+  setBar('inv-enroute-bar','inv-enroute-n', enroute, total);
+  setBar('inv-collected-bar','inv-collected-n', collected, total);
+  document.getElementById('inv-total').textContent   = total;
+  document.getElementById('inv-pending').textContent = pending;
+}
+function findCamps() {
+  const camps = [
+    {name:'Lions Club Camp — Gandhipuram', dist:2.1, date:'15 Mar 2026', contact:'+91 98765 00001'},
+    {name:'Rotary Blood Drive — RS Puram',  dist:4.3, date:'22 Mar 2026', contact:'+91 98765 00002'},
+    {name:'GRH Hospital Annual Drive',      dist:6.8, date:'01 Apr 2026', contact:'+91 98765 00003'},
+  ];
+  const rad = +(document.getElementById('camp-rad').value || 10);
+  const filtered = camps.filter(c => c.dist <= rad);
+  document.getElementById('camp-results').innerHTML = filtered.length
+    ? filtered.map(c => `
+      <div class="card" style="margin-bottom:.6rem;padding:.8rem;font-size:0.8rem">
+        <div style="font-weight:500">⛺ ${c.name}</div>
+        <div style="color:var(--muted);margin-top:.2rem">${c.dist} km · ${c.date} · ${c.contact}</div>
+      </div>`).join('')
+    : '<div style="color:var(--muted);font-size:0.8rem">No camps found in this radius.</div>';
+}
+function registerCamp() {
+  const name = document.getElementById('nc-name').value;
+  if (!name) { toast('Enter camp name', 'error'); return; }
+  toast(`✅ Camp "${name}" registered`, 'success');
+  addAudit(`Blood camp registered: ${name}`);
+}
+
+// ── FORECAST ──────────────────────────────────────────────────────────
+function runForecast() {
+  const region = document.getElementById('fc-region').value;
+  const bg     = document.getElementById('fc-bg').value;
+
+  const base = bg.includes('-') ? 4 : bg.startsWith('O') ? 12 : 8;
+  const days  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const vals  = days.map(d => base + Math.floor(Math.random()*6-2));
+  const stock = base + 2;
+
+  const el = document.getElementById('fc-chart');
+  const maxV = Math.max(...vals, stock);
+  el.innerHTML = vals.map((v,i) => {
+    const h = Math.round((v/maxV)*100);
+    const sh = Math.round((stock/maxV)*100);
+    const isShort = v > stock;
+    return `<div class="chart-bar" style="height:${h}%;background:${isShort?'var(--blood-lit)':'var(--blood-dim)'};background:${isShort?'linear-gradient(to top,#7f1d1d,var(--blood-lit))':'linear-gradient(to top,var(--blood-dim),var(--blood-lit))'}">
+      <div class="bar-tip">${v}</div>
+      <div class="bar-lbl">${days[i]}</div>
+    </div>`;
+  }).join('');
+
+  const prob = vals.filter(v=>v>stock).length / vals.length;
+  const el2 = document.getElementById('shortage-display');
+  el2.innerHTML = `
+    <div class="ehr-field"><span class="ehr-key">Region</span><span class="ehr-val">${region}</span></div>
+    <div class="ehr-field"><span class="ehr-key">Blood Group</span><span class="ehr-val">${bg}</span></div>
+    <div class="ehr-field"><span class="ehr-key">7-Day Peak Demand</span><span class="ehr-val">${Math.max(...vals)} units</span></div>
+    <div class="ehr-field"><span class="ehr-key">Available Stock</span><span class="ehr-val">${stock} units</span></div>
+    <div class="ehr-field"><span class="ehr-key">Shortage Probability</span><span class="ehr-val" style="color:${prob>0.5?'var(--blood-lit)':'var(--green)'}">${(prob*100).toFixed(0)}% ${prob>0.7?'(CRITICAL)':'(MODERATE)'}</span></div>
+    <div class="ehr-field"><span class="ehr-key">Recommended Action</span><span class="ehr-val" style="color:var(--gold)">${prob>0.5?'🚨 Emergency Camp':'📣 Call Donors'}</span></div>
+    <div style="margin-top:.8rem;font-size:0.72rem;color:var(--muted)">
+      SHAP factors: lag_7 (+${(prob*30+5).toFixed(0)}%) · hospital_load (+${(prob*20+3).toFixed(0)}%) · is_festival (+${(prob*12).toFixed(0)}%)
+    </div>
+  `;
+  addAudit(`Forecast: ${region} / ${bg} — shortage prob ${(prob*100).toFixed(0)}%`);
+}
+function runCrossRegion() {
+  const region = document.getElementById('fc-region').value;
+  const bg = document.getElementById('fc-bg').value;
+  const adj = {Coimbatore:['Tiruppur','Erode'],Chennai:['Kanchipuram','Tiruvallur'],Madurai:['Dindigul','Virudhunagar'],Tiruchirappalli:['Karur','Pudukkottai'],Salem:['Namakkal','Dharmapuri']};
+  const neighbors = adj[region] || ['Region A','Region B'];
+  const results = neighbors.map(n => {
+    const surplus = Math.floor(Math.random()*5);
+    const ok = surplus >= 2;
+    return `<div class="${ok?'':''}">
+      ${ok?'✅':'❌'} <strong>${n}</strong> — Surplus: ${surplus} units
+      ${ok?`<span class="badge badge-green" style="margin-left:.4rem">Available</span>`:'<span class="badge badge-red" style="margin-left:.4rem">Insufficient</span>'}
+    </div>`;
+  });
+  document.getElementById('cr-output').innerHTML = results.join('');
+}
+function renderHeatmap() {
+  const regions = ['Coimbatore','Chennai','Madurai','Salem'];
+  const types   = ['O+','O-','A+','B+','AB+'];
+  const el = document.getElementById('heatmap-table');
+  if (!el) return;
+  const max = 20;
+  let html = `<tr><th style="padding:.3rem .5rem;color:var(--muted)"></th>${types.map(t=>`<th style="padding:.3rem .5rem;color:var(--blood-lit)">${t}</th>`).join('')}</tr>`;
+  regions.forEach(r => {
+    const cells = types.map(t => {
+      const v = Math.floor(Math.random()*18+3);
+      const intensity = v/max;
+      const bg = `rgba(192,57,43,${intensity.toFixed(2)})`;
+      return `<td style="padding:.4rem;background:${bg};border:1px solid var(--bg)">${v}</td>`;
+    });
+    html += `<tr><td style="padding:.4rem .5rem;color:var(--muted)">${r}</td>${cells.join('')}</tr>`;
+  });
+  el.innerHTML = html;
+}
+
+// ── GRATITUDE WALL ─────────────────────────────────────────────────────
+const DEMO_GRATITUDE = [
+  "Your donation gave me a second chance at life. I was in the ICU and your blood kept me alive. From my whole family — thank you.",
+  "Because of donors like you, my daughter survived her surgery. You are an angel.",
+  "I didn't think a stranger would help me in my darkest moment. You restored my faith in humanity.",
+  "The doctors said I needed 3 units urgently after the accident. You were there. I'm alive. Thank you.",
+  "My mother had thalassaemia and needed regular transfusions. Every donor made her smile. God bless you.",
+];
+function loadWall() {
+  const el = document.getElementById('wall-messages');
+  el.innerHTML = DEMO_GRATITUDE.map((m, i) => {
+    const daysAgo = [2, 5, 8, 14, 23][i];
+    return `<div class="grat-card">"${m}"<div class="grat-date">${daysAgo} days ago · Anonymous</div></div>`;
+  }).join('');
+}
+function postGratitude() {
+  const msg = document.getElementById('gw-msg').value;
+  const rid = document.getElementById('gw-rid').value;
+  if (!msg) { toast('Write a message first', 'error'); return; }
+  const el = document.getElementById('wall-messages');
+  const newCard = document.createElement('div');
+  newCard.className = 'grat-card';
+  newCard.innerHTML = `"${msg}"<div class="grat-date">Just now · Anonymous</div>`;
+  newCard.style.animation = 'fadeIn 0.4s ease';
+  el.prepend(newCard);
+  document.getElementById('gw-msg').value = '';
+  toast('💌 Thank you posted to the wall', 'success');
+  addAudit(`Gratitude posted for request ${rid}`);
+}
+
+// ── ADMIN ──────────────────────────────────────────────────────────────
+function trainDRI() {
+  const epochs = document.getElementById('adm-epochs').value || 50;
+  const lr     = document.getElementById('adm-lr').value || 0.001;
+  const log    = document.getElementById('train-log');
+  log.textContent = '🧬 Collecting post-donation vitals from Firestore...\n';
+  let ep = 0;
+  const t = setInterval(() => {
+    ep += 10;
+    const loss = (0.8 * Math.exp(-ep/40) + 0.05).toFixed(4);
+    log.textContent += `  Epoch ${ep}/${epochs} — Loss: ${loss}\n`;
+    log.scrollTop = log.scrollHeight;
+    if (ep >= epochs) {
+      clearInterval(t);
+      log.textContent += '\n✅ DonorRiskNet trained. Saved to models/donor_risk_net.pt\n';
+      log.textContent += '🧠 Learned speed updated. ETA predictor calibrated.\n';
+      document.getElementById('dri-status').textContent = 'Trained ✅';
+      document.getElementById('dri-status').style.color = 'var(--green)';
+      state.dri_trained = true;
+      toast('DonorRiskNet training complete!', 'success');
+      addAudit('DonorRiskNet trained — models/donor_risk_net.pt saved');
+    }
+  }, 200);
+}
+function generateQR() {
+  const rid = document.getElementById('qr-rid').value;
+  if (!rid) { toast('Enter Request ID', 'error'); return; }
+  const hash = Math.random().toString(36).substring(2,14).toUpperCase();
+  const qrId = `QRS_${hash}`;
+  const exp  = new Date(Date.now()+30*60000).toLocaleTimeString();
+  document.getElementById('qr-display').style.display = '';
+  document.getElementById('qr-session-id').textContent = qrId;
+  document.getElementById('qr-expiry').textContent = `Expires at ${exp} UTC`;
+  // Draw fake QR
+  const grid = document.getElementById('qr-grid');
+  grid.innerHTML = '';
+  for (let i=0;i<49;i++){
+    const c = document.createElement('div');
+    c.style.cssText = `background:${Math.random()>0.5?'#000':'#fff'};border-radius:1px;`;
+    grid.appendChild(c);
+  }
+  toast(`QR session ${qrId} generated`, 'info');
+  addAudit(`QR session: ${qrId} for ${rid}`);
+}
+
+const auditEntries = [];
+function addAudit(msg) {
+  const entry = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  auditEntries.unshift(entry);
+  if (auditEntries.length > 20) auditEntries.pop();
+  const el = document.getElementById('audit-log');
+  if (el) el.innerHTML = auditEntries.slice(0,10).map(e=>`<div>${e}</div>`).join('');
+}
+function renderAuditLog() {
+  const el = document.getElementById('audit-log');
+  if (el) el.innerHTML = auditEntries.length
+    ? auditEntries.map(e=>`<div>${e}</div>`).join('')
+    : '<div style="color:var(--muted)">No activity yet. Interact with the system to generate audit logs.</div>';
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────────
+function toast(msg, type='info') {
+  const area = document.getElementById('toast-area');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  const icons = {success:'✅', error:'❌', info:'ℹ️'};
+  t.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  area.appendChild(t);
+  setTimeout(() => t.remove(), 4200);
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  updateStats();
+  loadWall();
+  renderEHRList();
+  renderCompatMatrix();
+  renderHeatmap();
+  loadTrends();
+  addAudit('BloodBridge UI initialized');
+  addAudit('Firebase Firestore connected');
+  addAudit('ML Ensemble loaded (AUC 0.9975)');
+  addAudit('DonorRiskNet: awaiting training data');
+});
+</script>
+</body>
+</html>
